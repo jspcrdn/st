@@ -793,26 +793,33 @@ xloadcolor(int i, const char *name, Color *ncolor)
 void
 xloadcols(void)
 {
-	int i;
-	static int loaded;
-	Color *cp;
+    int i;
+    static int loaded;
+    Color *cp;
 
-	if (loaded) {
-		for (cp = dc.col; cp < &dc.col[dc.collen]; ++cp)
-			XftColorFree(xw.dpy, xw.vis, xw.cmap, cp);
-	} else {
-		dc.collen = MAX(LEN(colorname), 256);
-		dc.col = xmalloc(dc.collen * sizeof(Color));
-	}
+    if (loaded) {
+        for (cp = dc.col; cp < &dc.col[dc.collen]; ++cp)
+            XftColorFree(xw.dpy, xw.vis, xw.cmap, cp);
+    } else {
+        dc.collen = MAX(LEN(colorname), 256);
+        dc.col = xmalloc(dc.collen * sizeof(Color));
+    }
 
-	for (i = 0; i < dc.collen; i++)
-		if (!xloadcolor(i, NULL, &dc.col[i])) {
-			if (colorname[i])
-				die("could not allocate color '%s'\n", colorname[i]);
-			else
-				die("could not allocate color %d\n", i);
-		}
-	loaded = 1;
+    for (i = 0; i < dc.collen; i++) {
+        if (!xloadcolor(i, NULL, &dc.col[i])) {
+            if (colorname[i])
+                die("could not allocate color '%s'\n", colorname[i]);
+            else
+                die("could not allocate color %d\n", i);
+        }
+        
+        // Apply alpha to the color
+        dc.col[i].color.alpha = (unsigned short)(0xffff * alpha);
+        dc.col[i].pixel &= 0x00FFFFFF;
+        dc.col[i].pixel |= (unsigned char)(0xFF * alpha) << 24;
+    }
+
+    loaded = 1;
 }
 
 int
